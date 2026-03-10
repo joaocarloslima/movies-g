@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,7 +23,7 @@ import java.util.List;
 public class MovieController {
 
     @Autowired
-    private MovieService service; // Injeção de dependência - IoC
+    private MovieService service;// Injeção de dependência - IoC
 
     @GetMapping
     public List<Movie> listAll(){
@@ -30,21 +31,33 @@ public class MovieController {
     }
 
     @PostMapping
-    @ResponseStatus(code = HttpStatus.CREATED)
-    public Movie createMovie(@RequestBody Movie movie){ //binding
-        return service.addMovie(movie);
+    public ResponseEntity<Movie> createMovie(@RequestBody Movie movie){ //binding
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(service.addMovie(movie));
     }
 
-    @GetMapping("/{id}")
-    public Movie getMovieById(@PathVariable Long id){
+    @GetMapping("{id}")
+    public ResponseEntity<Movie> getMovieById(@PathVariable Long id){
         log.info("Obtendo dados do filme {}", id);
-        var optionalMovie = service.getMovieById(id);
 
-        if(optionalMovie.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        return ResponseEntity
+                .ok(service.getMovieById(id).orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND)
+                ));
+    }
 
-        return optionalMovie.get();
+    @DeleteMapping("{id}")
+    public ResponseEntity<Void> deleteMovie(@PathVariable Long id){
+        log.info("Deletando filme com id {}", id );
+        service.deleteMovie(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("{id}")
+    public ResponseEntity<Movie> updateMovie(@PathVariable Long id, @RequestBody Movie movie){
+        log.info("Atualizando filme com id {} com os dados {}", id, movie);
+        return ResponseEntity.ok( service.updateMovie(id, movie) );
     }
 
 }
