@@ -1,6 +1,9 @@
 package br.com.fiap.movies.services;
 
 import br.com.fiap.movies.models.Movie;
+import br.com.fiap.movies.repositories.MovieRepository;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -13,42 +16,36 @@ import java.util.Random;
 @Service
 public class MovieService {
 
-    private List<Movie> repository = new ArrayList<>();
+    @Autowired
+    private MovieRepository repository;
 
     public List<Movie> getAllMovies(){
-        return repository;
+        return repository.findAll();
     }
 
     public Movie addMovie(Movie movie){
-        movie.setId(Math.abs( new Random().nextLong() ));
-        repository.add(movie);
-        return movie;
+        return repository.save(movie);
     }
 
-    public Optional<Movie> getMovieById(Long id){
+    public Movie getMovieById(Long id){
         return findMovieById(id);
     }
 
     public void deleteMovie(Long id) {
-        repository.remove(findMovieById(id).get());
+        findMovieById(id);
+        repository.deleteById(id);
     }
 
-    public Movie updateMovie(Long id, Movie movie) {
-        repository.remove(findMovieById(id).get());
-        movie.setId(id);
-        repository.add(movie);
-
-        return movie;
+    public Movie updateMovie(Long id, Movie newMovie) {
+        findMovieById(id);
+        //BeanUtils.copyProperties(newMovie, movie, "id");
+        newMovie.setId(id);
+        return repository.save(newMovie);
     }
 
-    private Optional<Movie> findMovieById(Long id) {
-        var optionalMovie = repository.stream()
-                .filter(m -> m.getId().equals(id))
-                .findFirst();
-
-        if(optionalMovie.isEmpty()){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Filme com id " + id + " não encontrado");
-        }
-        return optionalMovie;
+    private Movie findMovieById(Long id) {
+        return repository.findById(id).orElseThrow(
+                () -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Filme com id " + id + " não encontrado")
+        );
     }
 }

@@ -40,11 +40,7 @@ public class MovieController {
     @GetMapping("{id}")
     public ResponseEntity<Movie> getMovieById(@PathVariable Long id){
         log.info("Obtendo dados do filme {}", id);
-
-        return ResponseEntity
-                .ok(service.getMovieById(id).orElseThrow(
-                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND)
-                ));
+        return ResponseEntity.ok(service.getMovieById(id));
     }
 
     @DeleteMapping("{id}")
